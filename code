@@ -1,0 +1,50 @@
+import random
+
+sel = hou.selectedNodes()[0]
+
+assemble = sel.createOutputNode("assemble")
+assemble.parm("outside_group").set("name")
+assemble.parm("pack_geo").set(1)
+    
+attrib = assemble.evalParm("outside_group")
+geometry = assemble.geometry()
+
+name_values = []
+
+for point in geometry.points():
+
+    name_values.append(point.attribValue(attrib))
+
+parent = sel.parent()
+merge = parent.createNode("merge")
+    
+for name in name_values:
+
+    blast = assemble.createOutputNode("blast")
+    blast.parm("grouptype").set(3)
+    blast.parm("negate").set(1)
+    blast.parm("group").set("@" + attrib + "=" + name)
+    color_node = blast.createOutputNode("color")
+       
+    r = random.uniform(0,1)
+    g = random.uniform(0,1)
+    b = random.uniform(0,1)
+   
+    color_tuple = (r, g, b)
+    
+    COLOR = hou.Color(color_tuple)
+   
+    color_node.setColor(COLOR)
+    color_node.parm("colorr").set(r)
+    color_node.parm("colorg").set(g)
+    color_node.parm("colorb").set(b)
+    
+    merge.setNextInput(color_node)
+
+parent.layoutChildren()
+
+unpack = merge.createOutputNode("unpack")
+unpack.parm("transfer_attributes").set("Cd")
+
+unpack.setDisplayFlag(True)
+unpack.setRenderFlag(True)
